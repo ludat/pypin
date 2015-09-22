@@ -1,0 +1,85 @@
+#%RAML 0.8
+---
+title: Pypi notification service
+version: v1.0
+baseUri: http://localhost:8081/pypi-notify/api
+mediaType: application/json
+
+traits:
+  - secured:
+      description: Trait to secure methods
+      usage: secure methods by email/password pair
+      responses:
+        401:
+          description: A bad user/password pair was provided
+      queryParameters:
+        mail:
+          description: User's id (in this case, mail)
+          type: string
+          required: true
+        password:
+          description: User's password (which was sent by email)
+          type: string
+          required: true
+
+/user:
+  post:
+    description: Create a new user and send him/her his/her password by email
+    queryParameters:
+      mail:
+        description: Mail of the new user
+        type: string
+        # pattern: ^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$ REGEX IS HARD
+        required: true
+    responses:
+      201:
+        description: The user was created
+      400:
+        description: Malformed mail
+  get:
+    description: Get data asociated with some user
+    is: [ secured ]
+    responses:
+      200:
+        description: Return data for that user
+        body:
+          application/json:
+            schema: !include user.schema
+  delete:
+    description: Delete the user
+    is: [ secured ]
+    responses:
+      200:
+        description: The user was deleted successfully
+  /activate:
+    post:
+      description: |
+        Turn an account into an activated account. Which tells the mailing system to start emailing that mail for update to followed packages
+      is: [ secured ]
+      responses:
+        200:
+          description: User activated the mail service
+  /packages:
+    get:
+      description: |
+        Get a list of all packages which are followed by this user
+      is: [ secured ]
+      responses:
+        200:
+          description: A list of followed packages
+          body:
+            application/json:
+    /{packageName}:
+      put:
+        description: |
+          Add a package to the list of packages followed by the user
+        is: [ secured ]
+        responses:
+          200:
+            description: Package was added
+          404:
+            description: Package name doesn't exists
+      delete:
+        description: |
+          Delete a package to the list of packages followed by the user
+        is: [ secured ]
